@@ -1,6 +1,7 @@
 module Main where
 
 import           Data.List              (intercalate)
+import qualified Data.Text              as T
 import           Lib
 import           Lucid
 import           System.IO              (hGetContents, stdin)
@@ -69,21 +70,25 @@ markdownDocument :: Parser MarkdownDocument
 markdownDocument =
   many (header1 <|> paragraph)
 
-printer :: MarkdownDocument -> String
+printer :: MarkdownDocument -> Html ()
 printer document =
-  intercalate "\n" (map printMarkdown document)
+  html_ $ do
+    head_
+
+           (link_ [rel_ (T.pack "stylesheet"), href_ (T.pack "https://rawgit.com/sinnerschrader/markdown-css/master/swiss.css")])
+    body_ (mconcat (map printMarkdown document))
 
 
-printMarkdown :: Markdown -> String
+printMarkdown :: Markdown -> Html ()
 printMarkdown (Paragraph content) =
-  "<p>" ++ concat (printInline <$> content) ++ "</p>"
+  p_ (mconcat (printInline <$> content))
 printMarkdown (Header level content) =
-    "<h" ++ show level ++ ">" ++ concat (printInline <$> content) ++"</h" ++ show level ++ ">"
+    h1_ (mconcat (printInline <$> content))
 
-printInline :: Inline -> String
-printInline (InlineCode content) = "<pre style=\"color: red\">" ++ content ++ "</pre>"
-printInline (InlineText content) = content
-printInline (Link content link) = "<a href=\"" ++ link ++ "\">" ++ content ++ "</a>"
+printInline :: Inline -> Html ()
+printInline (InlineCode content) = pre_ (toHtml content)
+printInline (InlineText content) = toHtml content
+printInline (Link content link)  = a_ [href_ (T.pack link)] (toHtml content)
 
 main :: IO ()
 main = do
@@ -92,5 +97,8 @@ main = do
   case parsed of
     Left error     -> print error
     Right markdown -> do
+      putStrLn "Parsed:\n"
       print markdown
-      putStrLn (printer markdown)
+      putStrLn ""
+      putStrLn "Here is your HTML:"
+      print (printer markdown)
