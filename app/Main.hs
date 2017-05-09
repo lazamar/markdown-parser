@@ -86,7 +86,7 @@ printMarkdown (Header level content) =
     h1_ (mconcat (printInline <$> content))
 
 printInline :: Inline -> Html ()
-printInline (InlineCode content) = pre_ (toHtml content)
+printInline (InlineCode content) = code_ (toHtml content)
 printInline (InlineText content) = toHtml content
 printInline (Link content link)  = a_ [href_ (T.pack link)] (toHtml content)
 
